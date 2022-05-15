@@ -7,12 +7,14 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include <functional>
 
 namespace polaris {
 namespace {
 bool is_digit(const char c) {
   return std::isdigit(static_cast<unsigned char>(c)) != 0;
 }
+
 } // namespace
 
 enum class cell_type_e { SYMBOL, NUMBER, LIST, PROC, LAMBDA, STRING };
@@ -20,17 +22,17 @@ enum class cell_type_e { SYMBOL, NUMBER, LIST, PROC, LAMBDA, STRING };
 class environment_c;
 
 struct cell_t {
-  typedef cell_t (*proc_type)(const std::vector<cell_t> &);
-  typedef std::vector<cell_t>::const_iterator iter;
-  typedef std::unordered_map<std::string, cell_t> map;
+  using proc_fn = std::function<cell_t(const std::vector<cell_t> &)>;
+  using map = std::unordered_map<std::string, cell_t>;
+
   cell_type_e type{cell_type_e::SYMBOL};
   std::string val;
   std::vector<cell_t> list;
-  proc_type proc;
+  proc_fn proc;
   std::shared_ptr<environment_c> env;
   cell_t(cell_type_e type = cell_type_e::SYMBOL) : type(type) {}
   cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
-  cell_t(proc_type proc) : type(cell_type_e::PROC), proc(proc) {}
+  cell_t(proc_fn proc) : type(cell_type_e::PROC), proc(proc) {}
 };
 
 typedef std::vector<cell_t> cells;
@@ -261,7 +263,7 @@ cell_t eval(cell_t x, std::shared_ptr<environment_c> env) {
   
   cells exps;
   cell_t proc(eval(x.list[0], env));
-  for (cell_t::iter exp = x.list.begin() + 1; exp != x.list.end(); ++exp) {
+  for (auto exp = x.list.begin() + 1; exp != x.list.end(); ++exp) {
     exps.push_back(eval(*exp, env));
   }
 
