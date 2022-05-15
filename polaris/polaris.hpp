@@ -17,34 +17,68 @@ bool is_digit(const char c) {
 
 } // namespace
 
+//! \brief General cell types
 enum class cell_type_e { SYMBOL, NUMBER, LIST, PROC, LAMBDA, STRING };
 
+//! \brief Execution environment
 class environment_c;
 
+//! \brief A given cell
 struct cell_t {
+  //! Shorthand for function calls
   using proc_fn = std::function<cell_t(const std::vector<cell_t> &)>;
-  using map = std::unordered_map<std::string, cell_t>;
 
+  //! Shorthand for an unordered map of cells
+  using map = std::unordered_map<std::string, cell_t>;
+  
+  //! The cells type
   cell_type_e type{cell_type_e::SYMBOL};
+
+  //! Cell value
   std::string val;
+
+  //! Cell list
   std::vector<cell_t> list;
+  
+  //! Function call (lambda)
   proc_fn proc;
+
+  //! Cell operating environment
   std::shared_ptr<environment_c> env;
+
+  //! \brief Construct a cell with only a given type
+  //! \param type The type to give the cell
   cell_t(cell_type_e type = cell_type_e::SYMBOL) : type(type) {}
+
+  //! \brief Construct the cell with a type and value
+  //! \param type The type to give the cell
+  //! \param val The value to give the cell
   cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
+
+  //! \brief Construct a cell that executes a function 
+  //! \param proc The function to process
   cell_t(proc_fn proc) : type(cell_type_e::PROC), proc(proc) {}
 };
 
-using cells = std::vector<cell_t>;
-const cell_t false_sym(cell_type_e::SYMBOL, "#f");
-const cell_t true_sym(cell_type_e::SYMBOL, "#t");
-const cell_t nil(cell_type_e::SYMBOL, "nil");
+using cells = std::vector<cell_t>;  //! Shorthand for vector of cells
+const cell_t false_sym(cell_type_e::SYMBOL, "#f");  //! Cell for "FALSE"
+const cell_t true_sym(cell_type_e::SYMBOL, "#t"); //! Cell for "TRUE"
+const cell_t nil(cell_type_e::SYMBOL, "nil"); //! Cell for "NIL"
 
+//! \brief Execution environment
 class environment_c {
 public:
+  //! \brief Construct a base environment
   environment_c() {}
-  ~environment_c() {}
+  
+  //! \brief Construct an environment with an "outer" parent environemnt
+  //!        that it can use to locate symbols
   environment_c(std::shared_ptr<environment_c> outer) : _outer(outer) {}
+
+  //! \brief Construct an environment wiht specific data baked into it 
+  //!        from the getgo
+  //! \param params Names of incoming data 
+  //! \param args Value of incoming datas
   environment_c(const cells &params, const cells &args,
                 std::shared_ptr<environment_c> outer)
       : _outer(outer) {
@@ -54,6 +88,10 @@ public:
     }
   }
 
+  //! \brief Find an environment variable given the name
+  //!        If the item can not be found in the current environment
+  //!        Then the outer environments will be checked - If the item
+  //!        does not exist std::exit will be called
   cell_t::map &find(const std::string &var) {
     if (_env.find(var) != _env.end()) {
       return _env;
@@ -65,8 +103,12 @@ public:
     std::exit(EXIT_FAILURE);
   }
 
+  //! \brief Operator [] overload for accessing environment variables
+  //! \param var The variable to retrieve
   cell_t &operator[](const std::string &var) { return _env[var]; }
 
+  //! \brief Get accessor for grabbing things through the shared pointer
+  //! \param var The variable to retrieve
   cell_t &get(const std::string &value) { return _env[value]; }
 
 private:
@@ -74,8 +116,11 @@ private:
   std::shared_ptr<environment_c> _outer;
 };
 
+//! \brief Evaluator
 class evaluator_c {
 public:
+  //! \brief Construct the base evaluator with the standard
+  //!         callable symbols baked into it
   evaluator_c() {
     _callable_symbol_table["quote"] =
         [](cell_t x, std::shared_ptr<environment_c> env) -> cell_t {
@@ -121,8 +166,13 @@ public:
     };
   }
 
+  //! \brief Evaluate a cell given and environment
+  //! \param x The cell to evaluate
+  //! \param env The environment to use in the evaluation
   cell_t evaluate(cell_t x, std::shared_ptr<environment_c> env) {
 
+    // Check for symbol number and string types
+    //
     switch (x.type) {
     case cell_type_e::SYMBOL:
       return env->find(x.val)[x.val];
@@ -134,6 +184,8 @@ public:
       break;
     }
 
+    // Check to ensure list isn't empty
+    //
     if (x.list.empty()) {
       return nil;
     }
@@ -147,29 +199,35 @@ public:
       return _callable_symbol_table[x.list[0].val](x, env);
     }
 
+    //  Create a processing cell with evaluated parameters
+    //
     cells exps;
     cell_t proc(evaluate(x.list[0], env));
     for (auto exp = x.list.begin() + 1; exp != x.list.end(); ++exp) {
       exps.push_back(evaluate(*exp, env));
     }
 
+    //  Proc type is a lambda, so it needs to be executed.
+    //  Upon creation we give it a new environment to thrive in and operate on
+    //  with the current environment stated as its outer
+    //
     if (proc.type == cell_type_e::LAMBDA) {
-      // Create an environment for the execution of this lambda function
-      // where the outer environment is the one that existed* at the time
-      // the lambda was defined and the new inner associations are the
-      // parameter names with the given arguments.
-      // *Although the environmet existed at the time the lambda was defined
-      // it wasn't necessarily complete - it may have subsequently had
-      // more symbols defined in that environment.
-      return evaluate(
-          /*body*/ proc.list[2],
+
+      // Evaluate the body (proc.list[2]) of the lambda with the new environemnt
+      //
+      return evaluate(proc.list[2],
           std::make_shared<environment_c>(proc.list[1].list, exps, proc.env));
+
     } else if (proc.type == cell_type_e::PROC) {
-      //  Execute the proc
+
+      //  If the item isn't a lambda perhaps its a processing cell so we need to call it
       //
       return proc.proc(exps);
     }
 
+    //  Sadly, if we get here it is time to kill.. something wild came in and the
+    //  user most likely did something silly. 
+    //
     std::cerr << "Not a function\n";
     std::exit(EXIT_FAILURE);
   }
@@ -180,7 +238,9 @@ private:
       _callable_symbol_table;
 };
 
-void add_globals(std::shared_ptr<environment_c> env) {
+//! \brief Add the basic sumbols to a given environment
+//! \param env The environment to load the symbols into
+static void add_globals(std::shared_ptr<environment_c> env) {
   env->get("nil") = nil;
   env->get("#f") = false_sym;
   env->get("#t") = true_sym;
@@ -304,7 +364,11 @@ void add_globals(std::shared_ptr<environment_c> env) {
   });
 }
 
-// Parse
+//  These functions don't need to be exposed
+//
+namespace {
+
+// Convert a string into a list of string "tokens" to be processed
 std::list<std::string> tokenize(const std::string &str) {
   std::list<std::string> tokens;
   for (auto i = 0; i < str.size(); i++) {
@@ -340,9 +404,7 @@ std::list<std::string> tokenize(const std::string &str) {
   return tokens;
 }
 
-//  These functions don't need to be exposed
-//
-namespace {
+// Take a token and convert it into a cell
 cell_t atom(const std::string &token) {
   if (is_digit(token[0]) || (token[0] == '-' && is_digit(token[1]))) {
     return cell_t(cell_type_e::NUMBER, token);
@@ -356,6 +418,7 @@ cell_t atom(const std::string &token) {
   return cell_t(cell_type_e::SYMBOL, token);
 }
 
+// Take a list of tokens and convert them into  proper cell
 cell_t read_from(std::list<std::string> &tokens) {
   const std::string token(tokens.front());
   tokens.pop_front();
@@ -370,14 +433,19 @@ cell_t read_from(std::list<std::string> &tokens) {
     return atom(token);
   }
 }
-}
+} // End anonymous namespace
 
-cell_t read(const std::string &s) {
+//! \brief Take a given string and process it down 
+//!        down to the cell_t level
+//! \param s The string to process in
+static cell_t read(const std::string &s) {
   std::list<std::string> tokens(tokenize(s));
   return read_from(tokens);
 }
 
-std::string to_string(const cell_t &exp) {
+//! \brief Convert a given cell to a string
+//! \param exp The cell to convert
+static std::string to_string(const cell_t &exp) {
   if (exp.type == cell_type_e::LIST) {
     std::string s("(");
     for (auto e = exp.list.begin(); e != exp.list.end(); ++e) {
