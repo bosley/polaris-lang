@@ -56,8 +56,10 @@ TEST(polaris_tests, all)
   auto env = std::make_shared<polaris::environment_c>();
   polaris::add_globals(env);
 
+  polaris::evaluator_c eval;
+
   for(auto &tc : tests) {
-    auto result = polaris::to_string(polaris::eval(polaris::read(tc.input), env));
+    auto result = polaris::to_string(eval.evaluate(polaris::read(tc.input), env));
     CHECK_EQUAL_TEXT(result, tc.expected_output, "Output did not meet expectations");
   }
 }

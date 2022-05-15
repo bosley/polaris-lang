@@ -4,12 +4,13 @@
 
 void repl(const std::string & prompt, std::shared_ptr<polaris::environment_c> env)
 {
+  polaris::evaluator_c evaluator;
   for (;;) {
       std::cout << prompt;
       std::string line; 
       std::getline(std::cin, line);
       std::cout << polaris::to_string(
-        polaris::eval(
+        evaluator.evaluate(
           polaris::read(line), env)
           ) << std::endl;
   }
