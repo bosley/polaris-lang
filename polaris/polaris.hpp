@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 namespace polaris {
 namespace {
@@ -26,7 +27,7 @@ struct cell_t {
   std::string val;
   std::vector<cell_t> list;
   proc_type proc;
-  environment_c *env{nullptr};
+  std::shared_ptr<environment_c> env;
   cell_t(cell_type_e type = cell_type_e::SYMBOL) : type(type) {}
   cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
   cell_t(proc_type proc) : type(cell_type_e::PROC), proc(proc) {}
@@ -41,8 +42,9 @@ const cell_t nil(cell_type_e::SYMBOL, "nil");
 class environment_c {
 public:
   environment_c() {}
-  environment_c(environment_c &outer) : _outer(&outer) {}
-  environment_c(const cells &params, const cells &args, environment_c *outer)
+  ~environment_c() {}
+  environment_c(std::shared_ptr<environment_c> outer) : _outer(outer) {}
+  environment_c(const cells &params, const cells &args, std::shared_ptr<environment_c> outer)
       : _outer(outer) {
     auto arg = args.begin();
     for (auto param = params.begin(); param != params.end(); ++param) {
@@ -63,9 +65,13 @@ public:
 
   cell_t &operator[](const std::string &var) { return _env[var]; }
 
+  cell_t &get(const std::string& value) {
+    return _env[value];
+  }
+
 private:
   cell_t::map _env;
-  environment_c *_outer{nullptr};
+  std::shared_ptr<environment_c> _outer;
 };
 
 cell_t proc_print(const cells &c) {
@@ -184,28 +190,28 @@ cell_t proc_list(const cells &c) {
   return result;
 }
 
-void add_globals(environment_c &env) {
-  env["nil"] = nil;
-  env["#f"] = false_sym;
-  env["#t"] = true_sym;
-  env["print"] = cell_t(&proc_print);
-  env["append"] = cell_t(&proc_append);
-  env["car"] = cell_t(&proc_car);
-  env["cdr"] = cell_t(&proc_cdr);
-  env["cons"] = cell_t(&proc_cons);
-  env["length"] = cell_t(&proc_length);
-  env["list"] = cell_t(&proc_list);
-  env["null?"] = cell_t(&proc_nullp);
-  env["+"] = cell_t(&proc_add);
-  env["-"] = cell_t(&proc_sub);
-  env["*"] = cell_t(&proc_mul);
-  env["/"] = cell_t(&proc_div);
-  env[">"] = cell_t(&proc_greater);
-  env["<"] = cell_t(&proc_less);
-  env["<="] = cell_t(&proc_less_equal);
+void add_globals(std::shared_ptr<environment_c> env) {
+  env->get("nil") = nil;
+  env->get("#f") = false_sym;
+  env->get("#t") = true_sym;
+  env->get("print") = cell_t(&proc_print);
+  env->get("append") = cell_t(&proc_append);
+  env->get("car") = cell_t(&proc_car);
+  env->get("cdr") = cell_t(&proc_cdr);
+  env->get("cons") = cell_t(&proc_cons);
+  env->get("length") = cell_t(&proc_length);
+  env->get("list") = cell_t(&proc_list);
+  env->get("null?") = cell_t(&proc_nullp);
+  env->get("+") = cell_t(&proc_add);
+  env->get("-") = cell_t(&proc_sub);
+  env->get("*") = cell_t(&proc_mul);
+  env->get("/") = cell_t(&proc_div);
+  env->get(">") = cell_t(&proc_greater);
+  env->get("<") = cell_t(&proc_less);
+  env->get("<=") = cell_t(&proc_less_equal);
 }
 
-cell_t eval(cell_t x, environment_c *env) {
+cell_t eval(cell_t x, std::shared_ptr<environment_c> env) {
   if (x.type == cell_type_e::SYMBOL) {
     return env->find(x.val)[x.val];
   }
@@ -242,7 +248,7 @@ cell_t eval(cell_t x, environment_c *env) {
       // keep a reference to the environment that exists now (when the
       // lambda is being defined) because that's the outer environment
       // we'll need to use when the lambda is executed
-      x.env = env;
+      x.env = std::make_shared<environment_c>(env);
       return x;
     }
     if (x.list[0].val == "begin") { // (begin exp*)
@@ -252,11 +258,13 @@ cell_t eval(cell_t x, environment_c *env) {
       return eval(x.list[x.list.size() - 1], env);
     }
   }
-  // (proc exp*)
-  cell_t proc(eval(x.list[0], env));
+  
   cells exps;
-  for (cell_t::iter exp = x.list.begin() + 1; exp != x.list.end(); ++exp)
+  cell_t proc(eval(x.list[0], env));
+  for (cell_t::iter exp = x.list.begin() + 1; exp != x.list.end(); ++exp) {
     exps.push_back(eval(*exp, env));
+  }
+
   if (proc.type == cell_type_e::LAMBDA) {
     // Create an environment for the execution of this lambda function
     // where the outer environment is the one that existed* at the time
@@ -266,10 +274,12 @@ cell_t eval(cell_t x, environment_c *env) {
     // it wasn't necessarily complete - it may have subsequently had
     // more symbols defined in that environment.
     return eval(/*body*/ proc.list[2],
-                new environment_c(/*parms*/ proc.list[1].list, /*args*/ exps,
-                                  proc.env));
-  } else if (proc.type == cell_type_e::PROC)
+                std::make_shared<environment_c>(proc.list[1].list, exps, proc.env));
+  } else if (proc.type == cell_type_e::PROC) {
+    //  Execute the proc
+    //
     return proc.proc(exps);
+  }
 
   std::cerr << "Not a function\n";
   std::exit(EXIT_FAILURE);

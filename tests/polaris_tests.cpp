@@ -1,6 +1,7 @@
 
 #include "polaris/polaris.hpp"
 #include <vector>
+#include <memory>
 
 #include <CppUTest/TestHarness.h>
 
@@ -52,13 +53,11 @@ TEST(polaris_tests, all)
     {"((repeat riff-shuffle) (list 1 2 3 4 5 6 7 8))",  "(1 3 5 7 2 4 6 8)"},
     {"(riff-shuffle (riff-shuffle (riff-shuffle (list 1 2 3 4 5 6 7 8))))", "(1 2 3 4 5 6 7 8)"},
   };
-
-  polaris::environment_c test_env;
-  polaris::add_globals(test_env);
+  auto env = std::make_shared<polaris::environment_c>();
+  polaris::add_globals(env);
 
   for(auto &tc : tests) {
-    auto result = polaris::to_string(polaris::eval(polaris::read(tc.input), &test_env));
+    auto result = polaris::to_string(polaris::eval(polaris::read(tc.input), env));
     CHECK_EQUAL_TEXT(result, tc.expected_output, "Output did not meet expectations");
   }
-
 }
