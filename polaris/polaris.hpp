@@ -57,7 +57,7 @@ public:
     if (_outer) {
       return _outer->find(var);
     }
-    std::cerr << "Unbound symbol : " << var << std::endl;
+    std::cerr << "Unbound symbol : [" << var << "]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
@@ -278,33 +278,35 @@ cell_t eval(cell_t x, environment_c *env) {
 // Parse
 std::list<std::string> tokenize(const std::string &str) {
   std::list<std::string> tokens;
-  const char *s = str.c_str();
-  while (*s) {
-    while (*s == ' ') {
-      ++s;
+  for(auto i = 0; i < str.size(); i++) {
+    if (std::isspace(str[i])){
+      continue;
     }
-    if (*s == '(' || *s == ')') {
-      tokens.push_back(*s++ == '(' ? "(" : ")");
+    if(str[i] == '(' || str[i] == ')') {
+      tokens.push_back(str[i] == '(' ? "(" : ")");
     } else {
-      const char *t = s;
-      bool in_str {false};
-      bool consume {true};
-      while (*t && consume) {
-        if (*t == '"') {
-          in_str = !in_str;
+      bool in_str{false};
+      std::string token;
+      while(i < str.size()) {
+        if(str[i] == '"') {
+          if(i > 0 && str[i-1] != '\\') {
+            in_str = !in_str;
+          }
         }
         if(in_str) {
-          ++t;
+          token += str[i];
         }
-        else if(*t != ' ' && *t != '(' && *t != ')') {
-          ++t;
+        else if(!std::isspace(str[i]) && str[i] != '(' && str[i] != ')') {
+          token += str[i];
+        } else {
+          --i;
+          break;
         }
-        else {
-          consume = false;
-        }
+        ++i;
       }
-      tokens.push_back(std::string(s, t));
-      s = t;
+      if (!token.empty()) {
+        tokens.push_back(token);
+      }
     }
   }
   return tokens;
