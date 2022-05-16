@@ -33,3 +33,7 @@
 
 **/build
 .vscode
+
+# This file is auto generated
+polaris/version.hpp
+.polaris/stdlib/version.pol

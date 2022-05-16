@@ -1,0 +1,4 @@
+(define _version_major @MAJOR_VERSION@)
+(define _version_minor @MINOR_VERSION@)
+(define _version_patch @PATCH_VERSION@)
+(define _version "@PROJECT_VERSION@")

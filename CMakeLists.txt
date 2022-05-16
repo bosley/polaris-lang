@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
 
-project (polaris)
+project (libpolaris)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 #
 # Options
 #
 option(COMPILE_TESTS "Execute unit tests" ON)
 option(WITH_ASAN     "Compile with ASAN" OFF)
+option(SETUP_POLARIS "Install local polaris data"    OFF)
 
 #
 # Setup build type 'Release vs Debug'
@@ -42,18 +44,80 @@ if(WITH_ASAN)
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+include(${CMAKE_SOURCE_DIR}/cmake/SetEnv.cmake)
+
+set(POLARIS_SOURCES
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/polaris.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/evaluator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/environment.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/imports.cpp
+)
+
+set(HEADERS
+    ${CMAKE_SOURCE_DIR}/polaris/fwd.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/imports.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/polaris.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/environment.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/evaluator.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/imports.hpp
+)
+
+set(SOURCES
+    ${POLARIS_SOURCES}
+)
+
+#
+# Configure Library
+#
+include(${CMAKE_SOURCE_DIR}/cmake/LibraryConfig.cmake)
+
+#
+# Configure Install
+#
+include(${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake)
+
 #
 # Setup polaris app
 #
-add_executable(polaris app/main.cpp)
+add_executable(polaris 
+  app/main.cpp
+  ${POLARIS_SOURCES}
+)
+
 target_include_directories(polaris
     PUBLIC 
         ${PROJECT_SOURCE_DIR}
 )
 
 #
+# Install bin
+#
+install (TARGETS polaris
+    DESTINATION bin)
+
+#
 # Tests
 #
 if(COMPILE_TESTS)
   add_subdirectory(tests)
+endif()
+
+#
+# Copy stdlib to build dir
+#
+add_custom_target(copy_assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/.polaris ${CMAKE_CURRENT_BINARY_DIR}/.polaris
+)
+add_dependencies(polaris copy_assets)
+
+if(SETUP_POLARIS)
+  if(DEFINED ENV{HOME})
+    set(STDLIB_HOME $ENV{HOME})
+    add_custom_target(copy_stdlib
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/.polaris ${STDLIB_HOME}/.polaris
+    )
+    add_dependencies(polaris copy_stdlib)
+  else()
+    message(FATAL_ERROR "The environment variable HOME has not been set - Can not setup polaris")
+  endif()
 endif()
