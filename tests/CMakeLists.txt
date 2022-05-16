@@ -7,6 +7,7 @@ include_directories(
 
 add_executable(polaris_unit_tests
         polaris_tests.cpp
+        ${POLARIS_SOURCES}
         main.cpp)
 
 target_link_libraries(polaris_unit_tests

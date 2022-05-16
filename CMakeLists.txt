@@ -42,10 +42,20 @@ if(WITH_ASAN)
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+set(POLARIS_SOURCES
+${CMAKE_CURRENT_SOURCE_DIR}/polaris/polaris.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/evaluator.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/environment.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/imports.cpp
+)
 #
 # Setup polaris app
 #
-add_executable(polaris app/main.cpp)
+add_executable(polaris 
+  app/main.cpp
+  ${POLARIS_SOURCES}
+)
+
 target_include_directories(polaris
     PUBLIC 
         ${PROJECT_SOURCE_DIR}
