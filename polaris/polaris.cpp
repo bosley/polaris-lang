@@ -117,7 +117,8 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
     if (result.size() > 0) {
       result = result.substr(0, result.size() - 2);
     }
-    return cell_t(cell_type_e::STRING, result);
+    std::cout << result << std::endl;
+    return true_sym;
   });
 
   env->get("import") = cell_t([&](const cells &c) -> cell_t {

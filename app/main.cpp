@@ -24,31 +24,37 @@ void version() {
 
 void repl(const std::string &prompt, polaris::evaluator_c &evaluator,
           std::shared_ptr<polaris::environment_c> env) {
-  for (;;) {
-    std::cout << prompt;
+
+  std::string command;
+  uint64_t tracker{0};
+  while(1) {
+    if (tracker == 0) { 
+      std::cout << prompt;
+    }
+
     std::string line;
     std::getline(std::cin, line);
-    std::cout << polaris::to_string(
-                     evaluator.evaluate(polaris::read(line), env))
-              << std::endl;
+    if(line.empty()) {
+      continue;
+    }
+    for(auto &c : line) {
+      if (c == '(') { tracker++; }
+      else if (c == ')') { tracker--;}
+      command += c;
+    }
+
+    if (tracker == 0 && !command.empty()) {
+      std::cout << polaris::to_string(
+                      evaluator.evaluate(polaris::read(command), env))
+                << std::endl;
+      command.clear();
+    }
   }
 }
 
 void execute(const std::string &file, polaris::evaluator_c &evaluator,
              std::shared_ptr<polaris::environment_c> env) {
-
-  /*
-      TODO: Right now multi-lined statements can not be read in from file. It all has to be
-            crammed onto a single line. Fix this by reading in each line and scanning it. 
-            Compose each statement by realizing that if we have a single open '(' then we 
-            start scanning until all open '(' have matching closing ')'. When that condition
-            hits we have a full statement that needs to be shipped off to polaris. 
-
-            - Note: This should also be configured for REPL so we can have multilined repl
-                    statements.
-  */
-
- 
+               
   std::filesystem::path p(file);
   if (!std::filesystem::is_regular_file(p)) {
     std::cerr << "Item: " << file << " does not exist" << std::endl;
@@ -64,13 +70,23 @@ void execute(const std::string &file, polaris::evaluator_c &evaluator,
   }
 
   std::string line;
+  std::string command;
+  uint64_t tracker {0};
   while (std::getline(fs, line)) {
     if(line.empty()) {
       continue;
     }
-    std::cout << polaris::to_string(
-                     evaluator.evaluate(polaris::read(line), env))
-              << std::endl;
+
+    for(auto &c : line) {
+      if (c == '(') { tracker++; }
+      else if (c == ')') { tracker--;}
+      command += c;
+    }
+
+    if (tracker == 0 && !command.empty()) {
+      evaluator.evaluate(polaris::read(command), env);
+      command.clear();
+    }
   }
 }
 

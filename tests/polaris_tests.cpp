@@ -52,7 +52,7 @@ TEST(polaris_tests, all)
     {"(riff-shuffle (list 1 2 3 4 5 6 7 8))", "(1 5 2 6 3 7 4 8)"},
     {"((repeat riff-shuffle) (list 1 2 3 4 5 6 7 8))",  "(1 3 5 7 2 4 6 8)"},
     {"(riff-shuffle (riff-shuffle (riff-shuffle (list 1 2 3 4 5 6 7 8))))", "(1 2 3 4 5 6 7 8)"},
-    {"(print \"This is a string\")", "This is a string"},
+    {"(print \"This is a string\")", "#t"},
   };
   polaris::evaluator_c eval;
   auto env = std::make_shared<polaris::environment_c>();
