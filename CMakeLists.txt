@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
-project (polaris)
+project (libpolaris)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
 
 #
 # Options
@@ -42,12 +43,39 @@ if(WITH_ASAN)
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
 
+
+include(${CMAKE_SOURCE_DIR}/cmake/SetEnv.cmake)
+
 set(POLARIS_SOURCES
-${CMAKE_CURRENT_SOURCE_DIR}/polaris/polaris.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/polaris.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/evaluator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/environment.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/imports.cpp
 )
+
+set(HEADERS
+    ${CMAKE_SOURCE_DIR}/polaris/fwd.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/imports.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/polaris.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/environment.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/evaluator.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/imports.hpp
+)
+
+set(SOURCES
+    ${POLARIS_SOURCES}
+)
+
+#
+# Configure Library
+#
+include(${CMAKE_SOURCE_DIR}/cmake/LibraryConfig.cmake)
+
+#
+# Configure Install
+#
+include(${CMAKE_SOURCE_DIR}/cmake/InstallConfig.cmake)
+
 #
 # Setup polaris app
 #
@@ -60,6 +88,12 @@ target_include_directories(polaris
     PUBLIC 
         ${PROJECT_SOURCE_DIR}
 )
+
+#
+# Install bin
+#
+install (TARGETS polaris
+    DESTINATION bin)
 
 #
 # Tests
