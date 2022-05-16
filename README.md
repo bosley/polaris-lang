@@ -6,10 +6,8 @@ A small lisp-clone language.
 
 **Dependencies**
 
-
  - CMake >= 3.5
  - CPPUTest - Check the `scripts` directory for an installation script, alternatively if on mac it can be installed with `brew install cpputest`
-
 
 **Compiling/Installing**
 
@@ -69,6 +67,16 @@ polaris> (import "some_file.pol" "some_other_file.pol")
 ```
 
 The full path name of a file is recorded to ensure files are not imported multiple times.
+
+## Docker
+
+**Building**
+
+`docker build -t polaris .`
+
+**Running Container REPL**
+
+`docker run -a stdin -a stdout -i -t polaris /polaris/docker-build/polaris`
 
 **Credits**
 
