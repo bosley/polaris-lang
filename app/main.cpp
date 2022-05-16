@@ -1,4 +1,5 @@
 #include "polaris/polaris.hpp"
+#include "polaris/version.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -9,8 +10,15 @@ void help()
   std::cout << "\nHelp : " << std::endl
             << "-i | --include  < ':' delim list >    Add include directories\n"
             << "-h | --help                           Show help\n"
+            << "-v | --version                        Show version\n"
             << "\nTo enter REPL do not include a file\n"
             << std::endl;
+  std::exit(EXIT_SUCCESS);
+}
+
+void version()
+{
+  std::cout << "polaris version " LIBPOLARIS_VERSION << std::endl;
   std::exit(EXIT_SUCCESS);
 }
 
@@ -58,6 +66,10 @@ int main(int argc, char ** argv)
 
     if (arguments[i] == "-h" || arguments[i] == "--help") {
       help();
+    }
+
+    if (arguments[i] == "-v" || arguments[i] == "--version") {
+      version();
     }
 
     // If it isn't an option it is a file
