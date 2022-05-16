@@ -29,9 +29,12 @@ install(TARGETS ${LIBRARY_NAME}
   COMPONENT dev)
 
 # Create 'version.h'
-configure_file(${CMAKE_SOURCE_DIR}/polaris/version.hpp.in
+configure_file(${CMAKE_SOURCE_DIR}/generate/version.hpp.in
   "${CMAKE_SOURCE_DIR}/polaris/version.hpp" @ONLY)
 set(HEADERS ${HEADERS} ${CMAKE_SOURCE_DIR}/polaris/version.hpp)
+
+configure_file(${CMAKE_SOURCE_DIR}/generate/version.pol.in
+  "${CMAKE_SOURCE_DIR}/.polaris/stdlib/version.pol" @ONLY)
 
 # Install headers
 #install(FILES ${HEADERS}

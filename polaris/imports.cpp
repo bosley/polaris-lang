@@ -6,16 +6,13 @@
 #include <fstream>
 #include <iostream>
 
-namespace polaris
-{
+namespace polaris {
 
-imports_c::imports_c(evaluator_c &eval, std::shared_ptr<environment_c> environment,
-            const std::vector<std::string> &include_directories)
-      : _evaluator(eval), _environment(environment),
-        _include_directories(include_directories)
-{
-  
-}
+imports_c::imports_c(evaluator_c &eval,
+                     std::shared_ptr<environment_c> environment,
+                     const std::vector<std::string> &include_directories)
+    : _evaluator(eval), _environment(environment),
+      _include_directories(include_directories) {}
 
 void imports_c::import(const std::string &file) {
 
@@ -56,4 +53,4 @@ void imports_c::read_file(const std::string &path) {
   }
 }
 
-}
+} // namespace polaris

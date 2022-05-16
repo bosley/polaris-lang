@@ -10,6 +10,7 @@ set(CMAKE_STATIC_LIBRARY_PREFIX "")
 #
 option(COMPILE_TESTS "Execute unit tests" ON)
 option(WITH_ASAN     "Compile with ASAN" OFF)
+option(SETUP_POLARIS "Install local polaris data"    OFF)
 
 #
 # Setup build type 'Release vs Debug'
@@ -42,7 +43,6 @@ if(WITH_ASAN)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
   set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 endif()
-
 
 include(${CMAKE_SOURCE_DIR}/cmake/SetEnv.cmake)
 
@@ -100,4 +100,24 @@ install (TARGETS polaris
 #
 if(COMPILE_TESTS)
   add_subdirectory(tests)
+endif()
+
+#
+# Copy stdlib to build dir
+#
+add_custom_target(copy_assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/.polaris ${CMAKE_CURRENT_BINARY_DIR}/.polaris
+)
+add_dependencies(polaris copy_assets)
+
+if(SETUP_POLARIS)
+  if(DEFINED ENV{HOME})
+    set(STDLIB_HOME $ENV{HOME})
+    add_custom_target(copy_stdlib
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/.polaris ${STDLIB_HOME}/.polaris
+    )
+    add_dependencies(polaris copy_stdlib)
+  else()
+    message(FATAL_ERROR "The environment variable HOME has not been set - Can not setup polaris")
+  endif()
 endif()

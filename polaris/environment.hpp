@@ -1,12 +1,11 @@
 #ifndef POLARIS_ENVIRONMENT_HPP
 #define POLARIS_ENVIRONMENT_HPP
 
+#include "cell.hpp"
 #include <memory>
 #include <vector>
-#include "cell.hpp"
 
-namespace polaris
-{
+namespace polaris {
 
 //! \brief Execution environment
 class environment_c {
@@ -44,6 +43,6 @@ private:
   std::shared_ptr<environment_c> _outer;
 };
 
-}
+} // namespace polaris
 
 #endif

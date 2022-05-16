@@ -1,12 +1,13 @@
 #include "polaris/polaris.hpp"
 #include "polaris/version.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
-void help()
-{
+void help() {
   std::cout << "\nHelp : " << std::endl
             << "-i | --include  < ':' delim list >    Add include directories\n"
             << "-h | --help                           Show help\n"
@@ -16,32 +17,48 @@ void help()
   std::exit(EXIT_SUCCESS);
 }
 
-void version()
-{
+void version() {
   std::cout << "polaris version " LIBPOLARIS_VERSION << std::endl;
   std::exit(EXIT_SUCCESS);
 }
 
-void repl(const std::string & prompt, polaris::evaluator_c &evaluator, std::shared_ptr<polaris::environment_c> env)
-{
+void repl(const std::string &prompt, polaris::evaluator_c &evaluator,
+          std::shared_ptr<polaris::environment_c> env) {
   for (;;) {
-      std::cout << prompt;
-      std::string line; 
-      std::getline(std::cin, line);
-      std::cout << polaris::to_string(
-        evaluator.evaluate(
-          polaris::read(line), env)
-          ) << std::endl;
+    std::cout << prompt;
+    std::string line;
+    std::getline(std::cin, line);
+    std::cout << polaris::to_string(
+                     evaluator.evaluate(polaris::read(line), env))
+              << std::endl;
   }
 }
 
-void execute(const std::string &file, polaris::evaluator_c &evaluator, std::shared_ptr<polaris::environment_c> env)
-{
-  std::cout << "Execute : " << file << std::endl;
+void execute(const std::string &file, polaris::evaluator_c &evaluator,
+             std::shared_ptr<polaris::environment_c> env) {
+  std::filesystem::path p(file);
+  if (!std::filesystem::is_regular_file(p)) {
+    std::cerr << "Item: " << file << " does not exist" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  std::fstream fs;
+  fs.open(file, std::fstream::in);
+
+  if (!fs.is_open()) {
+    std::cerr << "Unable to open file: " << file << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+
+  std::string line;
+  while (std::getline(fs, line)) {
+    std::cout << polaris::to_string(
+                     evaluator.evaluate(polaris::read(line), env))
+              << std::endl;
+  }
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char **argv) {
   polaris::evaluator_c evaluator;
   auto environment = std::make_shared<polaris::environment_c>();
 
@@ -51,15 +68,16 @@ int main(int argc, char ** argv)
   auto arguments = std::vector<std::string>(argv + 1, argv + argc);
   for (size_t i = 0; i < arguments.size(); i++) {
     if (arguments[i] == "-i" || arguments[i] == "--include") {
-      if(i + 1 >= arguments.size()) {
-        std::cerr << "Expected value to be passed in with -i --include" << std::endl;
+      if (i + 1 >= arguments.size()) {
+        std::cerr << "Expected value to be passed in with -i --include"
+                  << std::endl;
         std::exit(EXIT_FAILURE);
       }
       i++;
       std::string item;
       std::istringstream ss(arguments[i]);
       while (std::getline(ss, item, ':')) {
-          include_dirs.emplace_back(item);
+        include_dirs.emplace_back(item);
       }
       continue;
     }
@@ -81,7 +99,7 @@ int main(int argc, char ** argv)
   polaris::imports_c imports(evaluator, environment, include_dirs);
   polaris::add_globals(environment, imports);
 
-  if(file.empty()) {
+  if (file.empty()) {
     repl("polaris> ", evaluator, environment);
   } else {
     execute(file, evaluator, environment);

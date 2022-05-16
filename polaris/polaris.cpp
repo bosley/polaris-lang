@@ -1,12 +1,11 @@
 #include "polaris.hpp"
 
-#include <list>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <list>
+#include <string>
+#include <vector>
 
-namespace polaris
-{
+namespace polaris {
 
 namespace {
 
@@ -104,8 +103,7 @@ std::string to_string(const cell_t &exp) {
   return exp.val;
 }
 
-void add_globals(std::shared_ptr<environment_c> env,
-                        imports_c &imports) {
+void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   env->get("nil") = nil;
   env->get("#f") = false_sym;
   env->get("#t") = true_sym;
@@ -242,4 +240,4 @@ void add_globals(std::shared_ptr<environment_c> env,
   });
 }
 
-}
+} // namespace polaris

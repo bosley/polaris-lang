@@ -8,8 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace polaris
-{
+namespace polaris {
 
 //! \brief Import helper
 class imports_c {
@@ -36,6 +35,6 @@ private:
   void read_file(const std::string &path);
 };
 
-}
+} // namespace polaris
 
 #endif

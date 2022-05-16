@@ -1,12 +1,12 @@
 #ifndef POLARIS_LANG_HPP
 #define POLARIS_LANG_HPP
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "cell.hpp"
-#include "evaluator.hpp"
 #include "environment.hpp"
+#include "evaluator.hpp"
 #include "imports.hpp"
 
 namespace polaris {
@@ -22,8 +22,7 @@ extern std::string to_string(const cell_t &exp);
 
 //! \brief Add the basic sumbols to a given environment
 //! \param env The environment to load the symbols into
-extern void add_globals(std::shared_ptr<environment_c> env,
-                        imports_c &imports);
+extern void add_globals(std::shared_ptr<environment_c> env, imports_c &imports);
 
 } // namespace polaris
 

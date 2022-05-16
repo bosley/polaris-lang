@@ -2,10 +2,10 @@
 #define POLARIS_CELL_HPP
 
 #include "fwd.hpp"
-#include <unordered_map>
-#include <string>
-#include <vector>
 #include <functional>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace polaris {
 
@@ -54,7 +54,6 @@ const cell_t false_sym(cell_type_e::SYMBOL, "#f"); //! Cell for "FALSE"
 const cell_t true_sym(cell_type_e::SYMBOL, "#t");  //! Cell for "TRUE"
 const cell_t nil(cell_type_e::SYMBOL, "nil");      //! Cell for "NIL"
 
-}
+} // namespace polaris
 
-
-#endif 
+#endif

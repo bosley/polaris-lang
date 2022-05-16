@@ -8,6 +8,6 @@ class environment_c;
 class evaluator_c;
 class imports_c;
 
-}
+} // namespace polaris
 
-#endif 
+#endif

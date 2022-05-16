@@ -8,8 +8,7 @@
 
 #include "fwd.hpp"
 
-namespace polaris
-{
+namespace polaris {
 
 //! \brief Evaluator
 class evaluator_c {
@@ -28,6 +27,6 @@ private:
                                       cell_t, std::shared_ptr<environment_c>)>>
       _callable_symbol_table;
 };
-}
+} // namespace polaris
 
 #endif
