@@ -52,14 +52,15 @@ TEST(polaris_tests, all)
     {"(riff-shuffle (list 1 2 3 4 5 6 7 8))", "(1 5 2 6 3 7 4 8)"},
     {"((repeat riff-shuffle) (list 1 2 3 4 5 6 7 8))",  "(1 3 5 7 2 4 6 8)"},
     {"(riff-shuffle (riff-shuffle (riff-shuffle (list 1 2 3 4 5 6 7 8))))", "(1 2 3 4 5 6 7 8)"},
+    {"(print \"This is a string\")", "This is a string"},
   };
-  auto env = std::make_shared<polaris::environment_c>();
-  polaris::add_globals(env);
-
   polaris::evaluator_c eval;
+  auto env = std::make_shared<polaris::environment_c>();
+  polaris::imports_c imports(eval, env);
+  polaris::add_globals(env, imports);
 
   for(auto &tc : tests) {
     auto result = polaris::to_string(eval.evaluate(polaris::read(tc.input), env));
-    CHECK_EQUAL_TEXT(result, tc.expected_output, "Output did not meet expectations");
+    CHECK_EQUAL_TEXT(tc.expected_output, result,  "Output did not meet expectations");
   }
 }

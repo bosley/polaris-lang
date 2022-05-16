@@ -1,21 +1,18 @@
 #ifndef POLARIS_LANG_HPP
 #define POLARIS_LANG_HPP
 
+#include <filesystem>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace polaris {
-namespace {
-bool is_digit(const char c) {
-  return std::isdigit(static_cast<unsigned char>(c)) != 0;
-}
-
-} // namespace
 
 //! \brief General cell types
 enum class cell_type_e { SYMBOL, NUMBER, LIST, PROC, LAMBDA, STRING };
@@ -30,7 +27,7 @@ struct cell_t {
 
   //! Shorthand for an unordered map of cells
   using map = std::unordered_map<std::string, cell_t>;
-  
+
   //! The cells type
   cell_type_e type{cell_type_e::SYMBOL};
 
@@ -39,7 +36,7 @@ struct cell_t {
 
   //! Cell list
   std::vector<cell_t> list;
-  
+
   //! Function call (lambda)
   proc_fn proc;
 
@@ -55,29 +52,132 @@ struct cell_t {
   //! \param val The value to give the cell
   cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
 
-  //! \brief Construct a cell that executes a function 
+  //! \brief Construct a cell that executes a function
   //! \param proc The function to process
   cell_t(proc_fn proc) : type(cell_type_e::PROC), proc(proc) {}
 };
 
-using cells = std::vector<cell_t>;  //! Shorthand for vector of cells
-const cell_t false_sym(cell_type_e::SYMBOL, "#f");  //! Cell for "FALSE"
-const cell_t true_sym(cell_type_e::SYMBOL, "#t"); //! Cell for "TRUE"
-const cell_t nil(cell_type_e::SYMBOL, "nil"); //! Cell for "NIL"
+using cells = std::vector<cell_t>; //! Shorthand for vector of cells
+const cell_t false_sym(cell_type_e::SYMBOL, "#f"); //! Cell for "FALSE"
+const cell_t true_sym(cell_type_e::SYMBOL, "#t");  //! Cell for "TRUE"
+const cell_t nil(cell_type_e::SYMBOL, "nil");      //! Cell for "NIL"
+
+//  These functions don't need to be exposed
+//
+namespace {
+
+// Convert a string into a list of string "tokens" to be processed
+std::list<std::string> tokenize(const std::string &str) {
+  std::list<std::string> tokens;
+  for (auto i = 0; i < str.size(); i++) {
+    if (std::isspace(str[i])) {
+      continue;
+    }
+    if (str[i] == '(' || str[i] == ')') {
+      tokens.push_back(str[i] == '(' ? "(" : ")");
+    } else {
+      bool in_str{false};
+      std::string token;
+      while (i < str.size()) {
+        if (str[i] == '"') {
+          if (i > 0 && str[i - 1] != '\\') {
+            in_str = !in_str;
+          }
+        }
+        if (in_str) {
+          token += str[i];
+        } else if (!std::isspace(str[i]) && str[i] != '(' && str[i] != ')') {
+          token += str[i];
+        } else {
+          --i;
+          break;
+        }
+        ++i;
+      }
+      if (!token.empty()) {
+        tokens.push_back(token);
+      }
+    }
+  }
+  return tokens;
+}
+
+// Check if something is a digit
+bool is_digit(const char c) {
+  return std::isdigit(static_cast<unsigned char>(c)) != 0;
+}
+
+// Take a token and convert it into a cell
+cell_t atom(const std::string &token) {
+  if (is_digit(token[0]) || (token[0] == '-' && is_digit(token[1]))) {
+    return cell_t(cell_type_e::NUMBER, token);
+  }
+
+  if (token.starts_with('"') && token.ends_with('"')) {
+    auto trimmed = token.substr(1, token.size() - 2);
+    return cell_t(cell_type_e::STRING, trimmed);
+  }
+
+  return cell_t(cell_type_e::SYMBOL, token);
+}
+
+// Take a list of tokens and convert them into  proper cell
+cell_t read_from(std::list<std::string> &tokens) {
+  const std::string token(tokens.front());
+  tokens.pop_front();
+  if (token == "(") {
+    cell_t c(cell_type_e::LIST);
+    while (tokens.front() != ")") {
+      c.list.push_back(read_from(tokens));
+    }
+    tokens.pop_front();
+    return c;
+  } else {
+    return atom(token);
+  }
+}
+} // End anonymous namespace
+
+//! \brief Take a given string and process it down
+//!        down to the cell_t level
+//! \param s The string to process in
+static cell_t read(const std::string &s) {
+  std::list<std::string> tokens(tokenize(s));
+  return read_from(tokens);
+}
+
+//! \brief Convert a given cell to a string
+//! \param exp The cell to convert
+static std::string to_string(const cell_t &exp) {
+  if (exp.type == cell_type_e::LIST) {
+    std::string s("(");
+    for (auto e = exp.list.begin(); e != exp.list.end(); ++e) {
+      s += to_string(*e) + ' ';
+    }
+    if (s[s.size() - 1] == ' ') {
+      s.erase(s.size() - 1);
+    }
+    return s + ')';
+  } else if (exp.type == cell_type_e::LAMBDA)
+    return "<Lambda>";
+  else if (exp.type == cell_type_e::PROC)
+    return "<Proc>";
+  return exp.val;
+}
 
 //! \brief Execution environment
 class environment_c {
 public:
   //! \brief Construct a base environment
   environment_c() {}
-  
+
   //! \brief Construct an environment with an "outer" parent environemnt
   //!        that it can use to locate symbols
   environment_c(std::shared_ptr<environment_c> outer) : _outer(outer) {}
 
-  //! \brief Construct an environment wiht specific data baked into it 
+  //! \brief Construct an environment wiht specific data baked into it
   //!        from the getgo
-  //! \param params Names of incoming data 
+  //! \param params Names of incoming data
   //! \param args Value of incoming datas
   environment_c(const cells &params, const cells &args,
                 std::shared_ptr<environment_c> outer)
@@ -215,18 +315,19 @@ public:
 
       // Evaluate the body (proc.list[2]) of the lambda with the new environemnt
       //
-      return evaluate(proc.list[2],
-          std::make_shared<environment_c>(proc.list[1].list, exps, proc.env));
+      return evaluate(proc.list[2], std::make_shared<environment_c>(
+                                        proc.list[1].list, exps, proc.env));
 
     } else if (proc.type == cell_type_e::PROC) {
 
-      //  If the item isn't a lambda perhaps its a processing cell so we need to call it
+      //  If the item isn't a lambda perhaps its a processing cell so we need to
+      //  call it
       //
       return proc.proc(exps);
     }
 
-    //  Sadly, if we get here it is time to kill.. something wild came in and the
-    //  user most likely did something silly. 
+    //  Sadly, if we get here it is time to kill.. something wild came in and
+    //  the user most likely did something silly.
     //
     std::cerr << "Not a function\n";
     std::exit(EXIT_FAILURE);
@@ -238,9 +339,72 @@ private:
       _callable_symbol_table;
 };
 
+//! \brief Import helper
+class imports_c {
+public:
+  //! \brief Construct the importer with the evaluator that
+  // will be used to
+  imports_c(evaluator_c &eval, std::shared_ptr<environment_c> environment)
+      : _evaluator(eval), _environment(environment) {}
+
+  //! \brief Attempt to import a file - If its already imported nothing will
+  //! happen,
+  //!        if the file can't be found as-is it the include directories will be
+  //!        checked iteratively. The first file found matching the name will be
+  //!        imported and added to the set of imported files
+  //! \param file The file to import
+  void import(const std::string &file) {
+
+    std::size_t idx = 0;
+    std::filesystem::path file_path(file);
+    while (!std::filesystem::is_regular_file(file_path)) {
+
+      if (idx >= _include_directories.size()) {
+        std::cerr << "File not found : " << file << std::endl;
+        std::exit(EXIT_FAILURE);
+      }
+
+      file_path = _include_directories[idx];
+      file_path /= file;
+
+      idx++;
+    }
+
+    if (_imported.contains(file_path.string())) {
+      return;
+    }
+
+    read_file(file_path.string());
+
+    _imported.insert(file_path.string());
+  }
+
+private:
+  evaluator_c &_evaluator;
+  std::shared_ptr<environment_c> _environment;
+  std::set<std::string> _imported;
+  std::vector<std::string> _include_directories;
+
+  void read_file(const std::string &path) {
+
+    std::fstream fs;
+    fs.open(path, std::fstream::in);
+    if (!fs.is_open()) {
+      std::cerr << "Unable to open file : " << path << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    std::string line;
+    while (std::getline(fs, line)) {
+      _evaluator.evaluate(read(line), _environment);
+    }
+  }
+};
+
 //! \brief Add the basic sumbols to a given environment
 //! \param env The environment to load the symbols into
-static void add_globals(std::shared_ptr<environment_c> env) {
+static void add_globals(std::shared_ptr<environment_c> env,
+                        imports_c &imports) {
   env->get("nil") = nil;
   env->get("#f") = false_sym;
   env->get("#t") = true_sym;
@@ -255,6 +419,19 @@ static void add_globals(std::shared_ptr<environment_c> env) {
       result = result.substr(0, result.size() - 2);
     }
     return cell_t(cell_type_e::STRING, result);
+  });
+
+  env->get("import") = cell_t([&](const cells &c) -> cell_t {
+    if (c.empty()) {
+      std::cerr << "Malformed import statement" << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    for (auto i : c) {
+      imports.import(i.val);
+    }
+
+    return true_sym;
   });
 
   env->get("append") = cell_t([](const cells &c) -> cell_t {
@@ -362,104 +539,6 @@ static void add_globals(std::shared_ptr<environment_c> env) {
     }
     return true_sym;
   });
-}
-
-//  These functions don't need to be exposed
-//
-namespace {
-
-// Convert a string into a list of string "tokens" to be processed
-std::list<std::string> tokenize(const std::string &str) {
-  std::list<std::string> tokens;
-  for (auto i = 0; i < str.size(); i++) {
-    if (std::isspace(str[i])) {
-      continue;
-    }
-    if (str[i] == '(' || str[i] == ')') {
-      tokens.push_back(str[i] == '(' ? "(" : ")");
-    } else {
-      bool in_str{false};
-      std::string token;
-      while (i < str.size()) {
-        if (str[i] == '"') {
-          if (i > 0 && str[i - 1] != '\\') {
-            in_str = !in_str;
-          }
-        }
-        if (in_str) {
-          token += str[i];
-        } else if (!std::isspace(str[i]) && str[i] != '(' && str[i] != ')') {
-          token += str[i];
-        } else {
-          --i;
-          break;
-        }
-        ++i;
-      }
-      if (!token.empty()) {
-        tokens.push_back(token);
-      }
-    }
-  }
-  return tokens;
-}
-
-// Take a token and convert it into a cell
-cell_t atom(const std::string &token) {
-  if (is_digit(token[0]) || (token[0] == '-' && is_digit(token[1]))) {
-    return cell_t(cell_type_e::NUMBER, token);
-  }
-
-  if (token.starts_with('"') && token.ends_with('"')) {
-    auto trimmed = token.substr(1, token.size() - 2);
-    return cell_t(cell_type_e::STRING, trimmed);
-  }
-
-  return cell_t(cell_type_e::SYMBOL, token);
-}
-
-// Take a list of tokens and convert them into  proper cell
-cell_t read_from(std::list<std::string> &tokens) {
-  const std::string token(tokens.front());
-  tokens.pop_front();
-  if (token == "(") {
-    cell_t c(cell_type_e::LIST);
-    while (tokens.front() != ")") {
-      c.list.push_back(read_from(tokens));
-    }
-    tokens.pop_front();
-    return c;
-  } else {
-    return atom(token);
-  }
-}
-} // End anonymous namespace
-
-//! \brief Take a given string and process it down 
-//!        down to the cell_t level
-//! \param s The string to process in
-static cell_t read(const std::string &s) {
-  std::list<std::string> tokens(tokenize(s));
-  return read_from(tokens);
-}
-
-//! \brief Convert a given cell to a string
-//! \param exp The cell to convert
-static std::string to_string(const cell_t &exp) {
-  if (exp.type == cell_type_e::LIST) {
-    std::string s("(");
-    for (auto e = exp.list.begin(); e != exp.list.end(); ++e) {
-      s += to_string(*e) + ' ';
-    }
-    if (s[s.size() - 1] == ' ') {
-      s.erase(s.size() - 1);
-    }
-    return s + ')';
-  } else if (exp.type == cell_type_e::LAMBDA)
-    return "<Lambda>";
-  else if (exp.type == cell_type_e::PROC)
-    return "<Proc>";
-  return exp.val;
 }
 
 } // namespace polaris

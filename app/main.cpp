@@ -2,9 +2,8 @@
 
 #include <iostream>
 
-void repl(const std::string & prompt, std::shared_ptr<polaris::environment_c> env)
+void repl(const std::string & prompt, polaris::evaluator_c &evaluator, std::shared_ptr<polaris::environment_c> env)
 {
-  polaris::evaluator_c evaluator;
   for (;;) {
       std::cout << prompt;
       std::string line; 
@@ -18,8 +17,9 @@ void repl(const std::string & prompt, std::shared_ptr<polaris::environment_c> en
 
 int main()
 {
-  auto env = std::make_shared<polaris::environment_c>();
-  
-  polaris::add_globals(env);
-  repl("polaris> ", env);
+  polaris::evaluator_c evaluator;
+  auto environment = std::make_shared<polaris::environment_c>();
+  polaris::imports_c imports(evaluator, environment);
+  polaris::add_globals(environment, imports);
+  repl("polaris> ", evaluator, environment);
 }
