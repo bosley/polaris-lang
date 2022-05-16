@@ -43,18 +43,24 @@ void repl(const std::string &prompt, polaris::evaluator_c &evaluator,
       command += c;
     }
 
+    std::cout << "Command : " << command << std::endl;
+
     if (tracker == 0 && !command.empty()) {
       std::cout << polaris::to_string(
                       evaluator.evaluate(polaris::read(command), env))
                 << std::endl;
       command.clear();
+    } else {
+
+      // In case they hit return - we need to space out inputs
+      command += ' ';
     }
   }
 }
 
 void execute(const std::string &file, polaris::evaluator_c &evaluator,
              std::shared_ptr<polaris::environment_c> env) {
-               
+
   std::filesystem::path p(file);
   if (!std::filesystem::is_regular_file(p)) {
     std::cerr << "Item: " << file << " does not exist" << std::endl;
@@ -86,6 +92,8 @@ void execute(const std::string &file, polaris::evaluator_c &evaluator,
     if (tracker == 0 && !command.empty()) {
       evaluator.evaluate(polaris::read(command), env);
       command.clear();
+    }else {
+      command += ' ';
     }
   }
 }
