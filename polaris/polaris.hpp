@@ -344,8 +344,10 @@ class imports_c {
 public:
   //! \brief Construct the importer with the evaluator that
   // will be used to
-  imports_c(evaluator_c &eval, std::shared_ptr<environment_c> environment)
-      : _evaluator(eval), _environment(environment) {}
+  imports_c(evaluator_c &eval, std::shared_ptr<environment_c> environment,
+            const std::vector<std::string> &include_directories)
+      : _evaluator(eval), _environment(environment),
+        _include_directories(include_directories) {}
 
   //! \brief Attempt to import a file - If its already imported nothing will
   //! happen,
@@ -366,7 +368,6 @@ public:
 
       file_path = _include_directories[idx];
       file_path /= file;
-
       idx++;
     }
 
@@ -375,7 +376,6 @@ public:
     }
 
     read_file(file_path.string());
-
     _imported.insert(file_path.string());
   }
 

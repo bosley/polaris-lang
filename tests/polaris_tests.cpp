@@ -56,7 +56,7 @@ TEST(polaris_tests, all)
   };
   polaris::evaluator_c eval;
   auto env = std::make_shared<polaris::environment_c>();
-  polaris::imports_c imports(eval, env);
+  polaris::imports_c imports(eval, env, {});
   polaris::add_globals(env, imports);
 
   for(auto &tc : tests) {
