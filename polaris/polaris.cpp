@@ -109,9 +109,10 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   env->get("#t") = true_sym;
 
   env->get("print") = cell_t([](const cells &c) -> cell_t {
+    
     std::string result;
     for (auto i = c.begin(); i != c.end(); ++i) {
-      result += i->val;
+      result += to_string((*i));
       result += ", ";
     }
     if (result.size() > 0) {
