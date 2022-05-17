@@ -1,7 +1,9 @@
 #include "imports.hpp"
 
 #include "evaluator.hpp"
+#include "feeder.hpp"
 #include "polaris.hpp"
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -48,8 +50,9 @@ void imports_c::read_file(const std::string &path) {
   }
 
   std::string line;
+  feeder_c feeder(_evaluator, _environment);
   while (std::getline(fs, line)) {
-    _evaluator.evaluate(read(line), _environment);
+    feeder.feed(line);
   }
 }
 

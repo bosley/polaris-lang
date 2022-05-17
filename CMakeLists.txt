@@ -50,6 +50,7 @@ set(POLARIS_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/polaris.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/evaluator.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/environment.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/polaris/feeder.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/polaris/imports.cpp
 )
 
@@ -59,6 +60,7 @@ set(HEADERS
     ${CMAKE_SOURCE_DIR}/polaris/polaris.hpp
     ${CMAKE_SOURCE_DIR}/polaris/environment.hpp
     ${CMAKE_SOURCE_DIR}/polaris/evaluator.hpp
+    ${CMAKE_SOURCE_DIR}/polaris/feeder.hpp
     ${CMAKE_SOURCE_DIR}/polaris/imports.hpp
 )
 
