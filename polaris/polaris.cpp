@@ -178,6 +178,22 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
     return c[0].list.empty() ? true_sym : false_sym;
   });
 
+  env->get("eq") = cell_t([](const cells &c) -> cell_t {
+    bool equal{false};
+    for (auto i = c.begin() + 1; i != c.end(); ++i) {
+      equal = (c[0].type == i->type && c[0].val == i->val);
+    }
+    return equal ? true_sym : false_sym;
+  });
+
+  env->get("neq") = cell_t([](const cells &c) -> cell_t {
+    bool equal{false};
+    for (auto i = c.begin() + 1; i != c.end(); ++i) {
+      equal = (c[0].type == i->type && c[0].val == i->val);
+    }
+    return equal ? false_sym : true_sym;
+  });
+
   env->get("+") = cell_t([](const cells &c) -> cell_t {
     long n(atol(c[0].val.c_str()));
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
