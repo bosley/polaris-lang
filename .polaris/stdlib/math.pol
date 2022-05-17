@@ -1,10 +1,23 @@
 (define math::PI 3.14159)
 (define math::PHI 1.61803)
 (define math::E 2.71828)
+
+; Perform Modulus
+;
 (define math::modulus 
   (lambda (a b) 
     (- a 
-       (* b (/ a b))
-    )
-  )
-)
+       (* b (/ a b)))))
+
+; Absolute value
+;
+(define math::abs 
+  (lambda (n) 
+    (
+      (if (> n 0) + -) 0 n)))
+
+; Factorial
+;
+(define fact 
+  (lambda (n) 
+    (if (<= n 1) 1 (* n (fact (- n 1))))))
