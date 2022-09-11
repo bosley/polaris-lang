@@ -11,7 +11,7 @@
 namespace polaris {
 
 //! \brief General cell types
-enum class cell_type_e { SYMBOL, NUMBER, LIST, PROC, LAMBDA, STRING };
+enum class cell_type_e { SYMBOL, NUMBER, DOUBLE, LIST, PROC, LAMBDA, STRING };
 
 //! \brief A given cell
 struct cell_t {

@@ -4,6 +4,8 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <sstream>
+#include <regex>
 
 namespace polaris {
 
@@ -50,9 +52,15 @@ bool is_digit(const char c) {
   return std::isdigit(static_cast<unsigned char>(c)) != 0;
 }
 
+static std::regex is_number("[+-]?([0-9]*[.])?[0-9]+");
+
 // Take a token and convert it into a cell
 cell_t atom(const std::string &token) {
-  if (is_digit(token[0]) || (token[0] == '-' && is_digit(token[1]))) {
+
+  if (std::regex_match(token, is_number)) {
+    if (token.find('.') != std::string::npos) {
+      return cell_t(cell_type_e::DOUBLE, token);
+    }
     return cell_t(cell_type_e::NUMBER, token);
   }
 
@@ -103,6 +111,10 @@ std::string to_string(const cell_t &exp) {
   return exp.val;
 }
 
+constexpr bool promote_to_double(cell_type_e lhs, cell_type_e rhs) {
+   return (lhs == cell_type_e::DOUBLE || rhs == cell_type_e::DOUBLE);
+}
+
 void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   env->get("nil") = nil;
   env->get("#f") = false_sym;
@@ -113,10 +125,9 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
     std::string result;
     for (auto i = c.begin(); i != c.end(); ++i) {
       result += to_string((*i));
-      result += ", ";
     }
     if (result.size() > 0) {
-      result = result.substr(0, result.size() - 2);
+      result = result.substr(0, result.size());
     }
     std::cout << result << std::endl;
     return true_sym;
@@ -196,41 +207,73 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   });
 
   env->get("+") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    double n(std::stod(c[0].val.c_str()));
+    bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      n += atol(i->val.c_str());
+      n += std::stod(i->val.c_str());
+      if (i->type == cell_type_e::DOUBLE) {
+         store_as_double = true;
+      }
     }
-    return cell_t(cell_type_e::NUMBER, std::to_string(n));
+    if (store_as_double) {
+       return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+    } else {
+       return cell_t(cell_type_e::NUMBER, std::to_string(static_cast<long>(n)));
+    }
   });
 
   env->get("-") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    double n(std::stod(c[0].val.c_str()));
+    bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      n -= atol(i->val.c_str());
+      n -= std::stod(i->val.c_str());
+      if (i->type == cell_type_e::DOUBLE) {
+         store_as_double = true;
+      }
     }
-    return cell_t(cell_type_e::NUMBER, std::to_string(n));
+    if (store_as_double) {
+       return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+    } else {
+       return cell_t(cell_type_e::NUMBER, std::to_string(static_cast<long>(n)));
+    }
   });
 
   env->get("*") = cell_t([](const cells &c) -> cell_t {
-    long n(1);
+    double n(1);
+    bool store_as_double = false;
     for (auto i = c.begin(); i != c.end(); ++i) {
-      n *= atol(i->val.c_str());
+      n *= std::stod(i->val.c_str());
+      if (i->type == cell_type_e::DOUBLE) {
+         store_as_double = true;
+      }
     }
-    return cell_t(cell_type_e::NUMBER, std::to_string(n));
+    if (store_as_double) {
+       return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+    } else {
+       return cell_t(cell_type_e::NUMBER, std::to_string(static_cast<long>(n)));
+    }
   });
 
   env->get("/") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
+    double n(std::stod(c[0].val.c_str()));
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      n /= atol(i->val.c_str());
+      n /= std::stod(i->val.c_str());
+      if (i->type == cell_type_e::DOUBLE) {
+         store_as_double = true;
+      }
     }
-    return cell_t(cell_type_e::NUMBER, std::to_string(n));
+    if (store_as_double) {
+       return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+    } else {
+       return cell_t(cell_type_e::NUMBER, std::to_string(static_cast<long>(n)));
+    }
   });
 
   env->get(">") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    double n(std::stod(c[0].val.c_str()));
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      if (n <= atol(i->val.c_str())) {
+      if (n <= std::stod(i->val.c_str())) {
         return false_sym;
       }
     }
@@ -238,9 +281,9 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   });
 
   env->get("<") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    double n(std::stod(c[0].val.c_str()));
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      if (n >= atol(i->val.c_str())) {
+      if (n >= std::stod(i->val.c_str())) {
         return false_sym;
       }
     }
@@ -248,9 +291,19 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
   });
 
   env->get("<=") = cell_t([](const cells &c) -> cell_t {
-    long n(atol(c[0].val.c_str()));
+    double n(std::stod(c[0].val.c_str()));
     for (auto i = c.begin() + 1; i != c.end(); ++i) {
-      if (n > atol(i->val.c_str())) {
+      if (n > std::stod(i->val.c_str())) {
+        return false_sym;
+      }
+    }
+    return true_sym;
+  });
+
+  env->get(">=") = cell_t([](const cells &c) -> cell_t {
+    double n(std::stod(c[0].val.c_str()));
+    for (auto i = c.begin() + 1; i != c.end(); ++i) {
+      if (n < std::stod(i->val.c_str())) {
         return false_sym;
       }
     }

@@ -8,6 +8,16 @@
 #include <sstream>
 #include <vector>
 
+#include <cstdlib>
+
+namespace {
+
+polaris::evaluator_c evaluator;
+auto environment = std::make_shared<polaris::environment_c>();
+polaris::feeder_c feeder(evaluator, environment);
+
+}
+
 void help() {
   std::cout << "\nHelp : " << std::endl
             << "-i | --include  < ':' delim list >    Add include directories\n"
@@ -23,11 +33,9 @@ void version() {
   std::exit(EXIT_SUCCESS);
 }
 
-void repl(const std::string &prompt, polaris::evaluator_c &evaluator,
-          std::shared_ptr<polaris::environment_c> env) {
+void repl(const std::string &prompt) {
 
   bool show_prompt{true};
-  polaris::feeder_c feeder(evaluator, env);
   while (1) {
     if (show_prompt) {
       std::cout << "polaris> ";
@@ -38,8 +46,7 @@ void repl(const std::string &prompt, polaris::evaluator_c &evaluator,
   }
 }
 
-void execute(const std::string &file, polaris::evaluator_c &evaluator,
-             std::shared_ptr<polaris::environment_c> env) {
+void execute(const std::string &file) {
 
   std::filesystem::path p(file);
   if (!std::filesystem::is_regular_file(p)) {
@@ -56,18 +63,32 @@ void execute(const std::string &file, polaris::evaluator_c &evaluator,
   }
 
   std::string line;
-  polaris::feeder_c feeder(evaluator, env);
   while (std::getline(fs, line)) {
     feeder.feed(line);
   }
 }
 
 int main(int argc, char **argv) {
-  polaris::evaluator_c evaluator;
-  auto environment = std::make_shared<polaris::environment_c>();
+
 
   std::string file;
   std::vector<std::string> include_dirs;
+
+  // Check if we can find the stdlib 
+  //
+  
+  auto path = std::string(std::getenv("HOME"));
+
+  if (!path.empty()) {
+    std::filesystem::path dir(path);
+    dir /= ".polaris";
+    dir /= "stdlib";
+    if (std::filesystem::is_directory(dir)) {
+      include_dirs.push_back(dir);
+    }
+  }
+
+
 
   auto arguments = std::vector<std::string>(argv + 1, argv + argc);
   for (size_t i = 0; i < arguments.size(); i++) {
@@ -104,9 +125,9 @@ int main(int argc, char **argv) {
   polaris::add_globals(environment, imports);
 
   if (file.empty()) {
-    repl("polaris> ", evaluator, environment);
+    repl("polaris> ");
   } else {
-    execute(file, evaluator, environment);
+    execute(file);
   }
   return 0;
 }

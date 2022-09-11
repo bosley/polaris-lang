@@ -18,6 +18,6 @@
 
 ; Factorial
 ;
-(define fact 
+(define math::fact 
   (lambda (n) 
-    (if (<= n 1) 1 (* n (fact (- n 1))))))
+    (if (<= n 1) 1 (* n (math::fact (- n 1))))))

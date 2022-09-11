@@ -59,6 +59,8 @@ cell_t evaluator_c::evaluate(cell_t x, std::shared_ptr<environment_c> env) {
     return env->find(x.val)[x.val];
   case cell_type_e::NUMBER:
     [[fallthrough]];
+  case cell_type_e::DOUBLE:
+    [[fallthrough]];
   case cell_type_e::STRING:
     return x;
   default:
