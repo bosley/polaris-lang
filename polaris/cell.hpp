@@ -13,6 +13,19 @@ namespace polaris {
 //! \brief General cell types
 enum class cell_type_e { SYMBOL, LIST, PROC, LAMBDA, STRING, NUMBER, DOUBLE };
 
+constexpr const char *cell_type_to_string(cell_type_e type) {
+   switch(type) {
+   case cell_type_e::SYMBOL: return "symbol";
+   case cell_type_e::LIST: return "list";
+   case cell_type_e::PROC: return "proc";
+   case cell_type_e::LAMBDA: return "lambda";
+   case cell_type_e::STRING: return "string";
+   case cell_type_e::NUMBER: return "number";
+   case cell_type_e::DOUBLE: return "double";
+   };
+   return "unknown";
+};
+
 //! \brief A given cell
 struct cell_t {
    //! Shorthand for function calls

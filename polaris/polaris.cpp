@@ -121,6 +121,19 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
    env->get("#f") = false_sym;
    env->get("#t") = true_sym;
 
+   env->get("exit") = cell_t([=](const cells &c) -> cell_t {
+      if (!c.empty()) {
+         try{
+            int n(std::stoi(c[0].val.c_str()));
+            std::exit(n);
+         } catch (...) {
+            env->get_error_cb()(error_level_e::FATAL, "failed to cast return code");
+            std::exit(1);
+         }
+      }
+      std::exit(0);
+   });
+
    env->get("print") = cell_t([](const cells &c) -> cell_t {
       std::string result;
       for (auto i = c.begin(); i != c.end(); ++i) {
@@ -128,6 +141,16 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
       }
       std::cout << result << std::endl;
       return true_sym;
+   });
+
+   env->get("ref") = cell_t([](const cells &c) -> cell_t {
+      cell_t result(cell_type_e::LIST);
+      for (auto i = c.begin(); i != c.end(); ++i) {
+         result.list.push_back(
+            cell_t(cell_type_e::STRING, cell_type_to_string((*i).type))
+         );
+      }
+      return result;
    });
 
    env->get("import") = cell_t([&](const cells &c) -> cell_t {
