@@ -1,3 +1,4 @@
+#include "polaris/error.hpp"
 #include "polaris/feeder.hpp"
 #include "polaris/polaris.hpp"
 #include "polaris/version.hpp"
@@ -12,8 +13,22 @@
 
 namespace {
 
+void error_callback(polaris::error_level_e level, const char *message) {
+
+   switch (level) {
+   case polaris::error_level_e::FAILURE:
+      std::cout << "[failure]: " << message << std::endl;
+      break;
+
+   case polaris::error_level_e::FATAL:
+      std::cout << "[fatal]: " << message << std::endl;
+      std::exit(1);
+      break;
+   }
+}
+
 polaris::evaluator_c evaluator;
-auto environment = std::make_shared<polaris::environment_c>();
+auto environment = std::make_shared<polaris::environment_c>(error_callback);
 polaris::feeder_c feeder(evaluator, environment);
 
 } // namespace

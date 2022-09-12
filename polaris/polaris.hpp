@@ -6,6 +6,7 @@
 
 #include "cell.hpp"
 #include "environment.hpp"
+#include "error.hpp"
 #include "evaluator.hpp"
 #include "imports.hpp"
 

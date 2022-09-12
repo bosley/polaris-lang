@@ -2,6 +2,7 @@
 #define POLARIS_ENVIRONMENT_HPP
 
 #include "cell.hpp"
+#include "error.hpp"
 #include <memory>
 #include <vector>
 
@@ -11,7 +12,7 @@ namespace polaris {
 class environment_c {
  public:
    //! \brief Construct a base environment
-   environment_c();
+   environment_c(error_cb_f cb);
 
    //! \brief Construct an environment with an "outer" parent environemnt
    //!        that it can use to locate symbols
@@ -38,9 +39,13 @@ class environment_c {
    //! \param var The variable to retrieve
    cell_t &get(const std::string &value);
 
+   //! \brief Retrieve the error callback
+   error_cb_f get_error_cb() { return _error_cb; }
+
  private:
    cell_t::map _env;
    std::shared_ptr<environment_c> _outer;
+   error_cb_f _error_cb;
 };
 
 } // namespace polaris

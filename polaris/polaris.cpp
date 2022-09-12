@@ -126,9 +126,6 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
       for (auto i = c.begin(); i != c.end(); ++i) {
          result += to_string((*i));
       }
-      if (result.size() > 0) {
-         result = result.substr(0, result.size());
-      }
       std::cout << result << std::endl;
       return true_sym;
    });
@@ -206,112 +203,176 @@ void add_globals(std::shared_ptr<environment_c> env, imports_c &imports) {
       return equal ? false_sym : true_sym;
    });
 
-   env->get("+") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         n += std::stod(i->val.c_str());
-         if (i->type == cell_type_e::DOUBLE) {
-            store_as_double = true;
+   env->get("+") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            n += std::stod(i->val.c_str());
+            if (i->type == cell_type_e::DOUBLE) {
+               store_as_double = true;
+            }
          }
+         if (store_as_double) {
+            return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+         } else {
+            return cell_t(cell_type_e::NUMBER,
+                          std::to_string(static_cast<long>(n)));
+         }
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      if (store_as_double) {
-         return cell_t(cell_type_e::DOUBLE, std::to_string(n));
-      } else {
-         return cell_t(cell_type_e::NUMBER,
-                       std::to_string(static_cast<long>(n)));
-      }
+      std::exit(1);
    });
 
-   env->get("-") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         n -= std::stod(i->val.c_str());
-         if (i->type == cell_type_e::DOUBLE) {
-            store_as_double = true;
+   env->get("-") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            n -= std::stod(i->val.c_str());
+            if (i->type == cell_type_e::DOUBLE) {
+               store_as_double = true;
+            }
          }
+         if (store_as_double) {
+            return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+         } else {
+            return cell_t(cell_type_e::NUMBER,
+                          std::to_string(static_cast<long>(n)));
+         }
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      if (store_as_double) {
-         return cell_t(cell_type_e::DOUBLE, std::to_string(n));
-      } else {
-         return cell_t(cell_type_e::NUMBER,
-                       std::to_string(static_cast<long>(n)));
-      }
+      std::exit(1);
    });
 
-   env->get("*") = cell_t([](const cells &c) -> cell_t {
-      double n(1);
-      bool store_as_double = false;
-      for (auto i = c.begin(); i != c.end(); ++i) {
-         n *= std::stod(i->val.c_str());
-         if (i->type == cell_type_e::DOUBLE) {
-            store_as_double = true;
+   env->get("*") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(1);
+         bool store_as_double = false;
+         for (auto i = c.begin(); i != c.end(); ++i) {
+            n *= std::stod(i->val.c_str());
+            if (i->type == cell_type_e::DOUBLE) {
+               store_as_double = true;
+            }
          }
+         if (store_as_double) {
+            return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+         } else {
+            return cell_t(cell_type_e::NUMBER,
+                          std::to_string(static_cast<long>(n)));
+         }
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      if (store_as_double) {
-         return cell_t(cell_type_e::DOUBLE, std::to_string(n));
-      } else {
-         return cell_t(cell_type_e::NUMBER,
-                       std::to_string(static_cast<long>(n)));
-      }
+      std::exit(1);
    });
 
-   env->get("/") = cell_t([](const cells &c) -> cell_t {
-      bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
-      double n(std::stod(c[0].val.c_str()));
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         n /= std::stod(i->val.c_str());
-         if (i->type == cell_type_e::DOUBLE) {
-            store_as_double = true;
+   env->get("/") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         bool store_as_double = (c[0].type == cell_type_e::DOUBLE);
+         double n(std::stod(c[0].val.c_str()));
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            n /= std::stod(i->val.c_str());
+            if (i->type == cell_type_e::DOUBLE) {
+               store_as_double = true;
+            }
          }
+         if (store_as_double) {
+            return cell_t(cell_type_e::DOUBLE, std::to_string(n));
+         } else {
+            return cell_t(cell_type_e::NUMBER,
+                          std::to_string(static_cast<long>(n)));
+         }
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      if (store_as_double) {
-         return cell_t(cell_type_e::DOUBLE, std::to_string(n));
-      } else {
-         return cell_t(cell_type_e::NUMBER,
-                       std::to_string(static_cast<long>(n)));
-      }
+      std::exit(1);
    });
 
-   env->get(">") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         if (n <= std::stod(i->val.c_str())) {
-            return false_sym;
+   env->get(">") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            if (n <= std::stod(i->val.c_str())) {
+               return false_sym;
+            }
          }
+         return true_sym;
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      return true_sym;
+      std::exit(1);
    });
 
-   env->get("<") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         if (n >= std::stod(i->val.c_str())) {
-            return false_sym;
+   env->get("<") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            if (n >= std::stod(i->val.c_str())) {
+               return false_sym;
+            }
          }
+         return true_sym;
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      return true_sym;
+      std::exit(1);
    });
 
-   env->get("<=") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         if (n > std::stod(i->val.c_str())) {
-            return false_sym;
+   env->get("<=") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            if (n > std::stod(i->val.c_str())) {
+               return false_sym;
+            }
          }
+         return true_sym;
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      return true_sym;
+      std::exit(1);
    });
 
-   env->get(">=") = cell_t([](const cells &c) -> cell_t {
-      double n(std::stod(c[0].val.c_str()));
-      for (auto i = c.begin() + 1; i != c.end(); ++i) {
-         if (n < std::stod(i->val.c_str())) {
-            return false_sym;
+   env->get(">=") = cell_t([=](const cells &c) -> cell_t {
+      try {
+         double n(std::stod(c[0].val.c_str()));
+         for (auto i = c.begin() + 1; i != c.end(); ++i) {
+            if (n < std::stod(i->val.c_str())) {
+               return false_sym;
+            }
          }
+         return true_sym;
+      } catch (const std::invalid_argument &) {
+         env->get_error_cb()(error_level_e::FATAL,
+                             "invalid argument for numerical conversion");
+      } catch (const std::out_of_range &) {
+         env->get_error_cb()(error_level_e::FATAL, "out of range");
       }
-      return true_sym;
+      std::exit(1);
    });
 }
 

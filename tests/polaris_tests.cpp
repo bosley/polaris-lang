@@ -1,5 +1,6 @@
 
 #include "polaris/polaris.hpp"
+#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -64,7 +65,10 @@ TEST(polaris_tests, all) {
        {"(print \"This is a string\")", "#t"},
    };
    polaris::evaluator_c eval;
-   auto env = std::make_shared<polaris::environment_c>();
+   auto env = std::make_shared<polaris::environment_c>(
+       [](polaris::error_level_e e, const char *message) {
+          std::cerr << message << std::endl;
+       });
    polaris::imports_c imports(eval, env, {});
    polaris::add_globals(env, imports);
 

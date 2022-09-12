@@ -4,7 +4,7 @@
 
 namespace polaris {
 
-environment_c::environment_c() {}
+environment_c::environment_c(error_cb_f cb) : _outer(nullptr), _error_cb(cb) {}
 
 environment_c::environment_c(std::shared_ptr<environment_c> outer)
     : _outer(outer) {}
@@ -25,8 +25,10 @@ cell_t::map &environment_c::find(const std::string &var) {
    if (_outer) {
       return _outer->find(var);
    }
-   std::cerr << "Unbound symbol : [" << var << "]" << std::endl;
-   std::exit(EXIT_FAILURE);
+
+   std::string err = "Unbound symbol : [" + var + "]";
+   _error_cb(error_level_e::FATAL, err.c_str());
+   std::exit(1);
 }
 
 cell_t &environment_c::operator[](const std::string &var) { return _env[var]; }
