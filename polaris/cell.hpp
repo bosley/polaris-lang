@@ -11,43 +11,43 @@
 namespace polaris {
 
 //! \brief General cell types
-enum class cell_type_e { SYMBOL, NUMBER, DOUBLE, LIST, PROC, LAMBDA, STRING };
+enum class cell_type_e { SYMBOL, LIST, PROC, LAMBDA, NUMBER, DOUBLE, STRING };
 
 //! \brief A given cell
 struct cell_t {
-  //! Shorthand for function calls
-  using proc_fn = std::function<cell_t(const std::vector<cell_t> &)>;
+   //! Shorthand for function calls
+   using proc_fn = std::function<cell_t(const std::vector<cell_t> &)>;
 
-  //! Shorthand for an unordered map of cells
-  using map = std::unordered_map<std::string, cell_t>;
+   //! Shorthand for an unordered map of cells
+   using map = std::unordered_map<std::string, cell_t>;
 
-  //! The cells type
-  cell_type_e type{cell_type_e::SYMBOL};
+   //! The cells type
+   cell_type_e type{cell_type_e::SYMBOL};
 
-  //! Cell value
-  std::string val;
+   //! Cell value
+   std::string val;
 
-  //! Cell list
-  std::vector<cell_t> list;
+   //! Cell list
+   std::vector<cell_t> list;
 
-  //! Function call (lambda)
-  proc_fn proc;
+   //! Function call (lambda)
+   proc_fn proc;
 
-  //! Cell operating environment
-  std::shared_ptr<environment_c> env;
+   //! Cell operating environment
+   std::shared_ptr<environment_c> env;
 
-  //! \brief Construct a cell with only a given type
-  //! \param type The type to give the cell
-  cell_t(cell_type_e type = cell_type_e::SYMBOL) : type(type) {}
+   //! \brief Construct a cell with only a given type
+   //! \param type The type to give the cell
+   cell_t(cell_type_e type = cell_type_e::SYMBOL) : type(type) {}
 
-  //! \brief Construct the cell with a type and value
-  //! \param type The type to give the cell
-  //! \param val The value to give the cell
-  cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
+   //! \brief Construct the cell with a type and value
+   //! \param type The type to give the cell
+   //! \param val The value to give the cell
+   cell_t(cell_type_e type, const std::string &val) : type(type), val(val) {}
 
-  //! \brief Construct a cell that executes a function
-  //! \param proc The function to process
-  cell_t(proc_fn proc) : type(cell_type_e::PROC), proc(proc) {}
+   //! \brief Construct a cell that executes a function
+   //! \param proc The function to process
+   cell_t(proc_fn proc) : type(cell_type_e::PROC), proc(proc) {}
 };
 
 using cells = std::vector<cell_t>; //! Shorthand for vector of cells
